@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raintown Member</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  min-height:100vh;
+  background:radial-gradient(ellipse at top,#29113d,#08080e 65%);
+  color:white;
+  font-family:Arial,sans-serif;
+  padding:24px;
+}
+a{color:#c084fc;text-decoration:none}
+.wrap{
+  max-width:600px;
+  margin:7vh auto;
+  padding:35px;
+  background:#12121c;
+  border:1px solid #a855f766;
+  border-radius:16px;
+  box-shadow:0 0 30px #a855f722;
+}
+h1{margin-top:0}
+p{color:#aaa;line-height:1.6}
+.btn{
+  width:100%;
+  padding:14px;
+  margin-top:14px;
+  border:0;
+  border-radius:8px;
+  background:linear-gradient(100deg,#9333ea,#4c1d95);
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+}
+#memberCode{
+  display:none;
+  padding:18px;
+  margin-top:15px;
+  background:#090910;
+  border:1px dashed #a855f7;
+  border-radius:10px;
+  color:#d8b4fe;
+  font-size:26px;
+  font-weight:bold;
+  text-align:center;
+  letter-spacing:3px;
+}
+#status{color:#ff9bba}
+</style>
+</head>
+
+<body>
+
+<a href="index.html">← HOME</a>
+
+<div class="wrap">
+  <h1>Become a Member</h1>
+
+  <p>
+    Sign in using your Google account.
+    Your Raintown Member Code will be generated automatically.
+  </p>
+
+  <button class="btn" id="loginBtn">
+    CONTINUE WITH GOOGLE
+  </button>
+
+  <div id="memberArea" hidden>
+    <p>Your Member Code:</p>
+    <div id="memberCode"></div>
+    <p id="email"></p>
+
+    <button class="btn" id="logoutBtn">LOG OUT</button>
+  </div>
+
+  <p id="status"></p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+
+<script>
+const statusEl = document.getElementById("status");
+
+async function showMember(){
+
+  const {data:{session}} =
+    await supabaseClient.auth.getSession();
+
+  if(!session) return;
+
+  document.getElementById("loginBtn").hidden = true;
+
+  const {data,error} =
+    await supabaseClient.rpc("ensure_member_profile");
+
+  if(error){
+    statusEl.textContent = error.message;
+    return;
+  }
+
+  document.getElementById("memberArea").hidden = false;
+
+  const code = document.getElementById("memberCode");
+  code.style.display = "block";
+  code.textContent = data;
+
+  document.getElementById("email").textContent =
+    session.user.email || "";
+}
+
+document.getElementById("loginBtn").onclick = async()=>{
+
+  statusEl.textContent = "";
+
+  const {error} =
+    await supabaseClient.auth.signInWithOAuth({
+      provider:"google",
+      options:{
+        redirectTo:location.origin + location.pathname
+      }
+    });
+
+  if(error){
+    statusEl.textContent = error.message;
+  }
+};
+
+document.getElementById("logoutBtn").onclick = async()=>{
+  await supabaseClient.auth.signOut();
+  location.reload();
+};
+
+supabaseClient.auth.onAuthStateChange(()=>{
+  showMember();
+});
+
+showMember();
+</script>
+
+</body>
+</html>
