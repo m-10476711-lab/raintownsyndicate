@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raintown Admin Dashboard</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  min-height:100vh;
+  background:#08080e;
+  color:white;
+  font-family:Arial,sans-serif;
+  padding:25px;
+}
+.panel{
+  max-width:750px;
+  margin:5vh auto;
+  padding:28px;
+  background:#13131d;
+  border:1px solid #a855f755;
+  border-radius:15px;
+}
+p{color:#aaa;line-height:1.6}
+button{
+  padding:12px 18px;
+  border:0;
+  border-radius:8px;
+  background:#7835bd;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+}
+#status{color:#c084fc}
+</style>
+</head>
+
+<body>
+
+<div class="panel">
+
+  <h1>Raintown Admin Dashboard</h1>
+
+  <p>Authorized Admin Area</p>
+
+  <p id="status">Checking access...</p>
+
+  <button id="logout">LOG OUT</button>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+
+<script>
+async function checkAccess(){
+
+  const {data:{session}} =
+    await supabaseClient.auth.getSession();
+
+  if(!session){
+    location.replace("admin-login.html");
+    return;
+  }
+
+  const {data:role,error} =
+    await supabaseClient.rpc("get_my_role");
+
+  if(error || !["ADMIN","OWNER"].includes(role)){
+
+    document.getElementById("status").textContent =
+      "ACCESS DENIED. This account is not authorized.";
+
+    await supabaseClient.auth.signOut();
+    return;
+  }
+
+  document.getElementById("status").textContent =
+    "Authorized: " + session.user.email +
+    " | Role: " + role;
+}
+
+document.getElementById("logout").onclick = async()=>{
+
+  await supabaseClient.auth.signOut();
+
+  location.replace("index.html");
+};
+
+checkAccess();
+</script>
+
+</body>
+</html>
